@@ -1,24 +1,22 @@
 import { NextResponse } from 'next/server';
-import { getDb } from '@/lib/db';
+import { db } from '@/lib/db';
 
 export async function GET() {
-  const db = getDb();
+  const pool = await db();
 
-  const projects = db.prepare('SELECT *, \'project\' as type FROM projects ORDER BY created_at DESC').all();
-  const krs = db.prepare('SELECT * FROM key_results ORDER BY project_id, row_number').all();
-  const features = db.prepare('SELECT *, \'feature\' as type FROM feature_requests ORDER BY created_at DESC').all();
-  const support = db.prepare('SELECT *, \'support\' as type FROM production_support ORDER BY created_at DESC').all();
-  const bau = db.prepare('SELECT *, \'bau\' as type FROM bau_items ORDER BY created_at DESC').all();
+  const [{ rows: projects }, { rows: krs }, { rows: features }, { rows: support }, { rows: bau }] =
+    await Promise.all([
+      pool.query("SELECT *, 'project' as type FROM projects ORDER BY created_at DESC"),
+      pool.query('SELECT * FROM key_results ORDER BY project_id, row_number'),
+      pool.query("SELECT *, 'feature' as type FROM feature_requests ORDER BY created_at DESC"),
+      pool.query("SELECT *, 'support' as type FROM production_support ORDER BY created_at DESC"),
+      pool.query("SELECT *, 'bau' as type FROM bau_items ORDER BY created_at DESC"),
+    ]);
 
-  const projectsWithKrs = (projects as Record<string, unknown>[]).map((p) => ({
+  const projectsWithKrs = projects.map((p) => ({
     ...p,
-    key_results: (krs as Record<string, unknown>[]).filter((kr) => kr.project_id === p.id),
+    key_results: krs.filter((kr) => kr.project_id === p.id),
   }));
 
-  return NextResponse.json({
-    projects: projectsWithKrs,
-    features,
-    support,
-    bau,
-  });
+  return NextResponse.json({ projects: projectsWithKrs, features, support, bau });
 }

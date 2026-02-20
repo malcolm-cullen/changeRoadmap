@@ -1,24 +1,20 @@
-import Database from 'better-sqlite3';
-import path from 'path';
+import { Pool } from 'pg';
 
-const DB_PATH = path.join(process.cwd(), 'roadmap.db');
+let pool: Pool | null = null;
+let schemaReady: Promise<void> | null = null;
 
-let db: Database.Database;
-
-export function getDb(): Database.Database {
-  if (!db) {
-    db = new Database(DB_PATH);
-    db.pragma('journal_mode = WAL');
-    db.pragma('foreign_keys = ON');
-    initialiseSchema(db);
+function getPool(): Pool {
+  if (!pool) {
+    pool = new Pool({ connectionString: process.env.DATABASE_URL });
+    schemaReady = initSchema(pool);
   }
-  return db;
+  return pool;
 }
 
-function initialiseSchema(db: Database.Database) {
-  db.exec(`
+async function initSchema(p: Pool): Promise<void> {
+  await p.query(`
     CREATE TABLE IF NOT EXISTS projects (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       initiative_name TEXT NOT NULL,
       submitter_name TEXT NOT NULL,
       submission_date TEXT NOT NULL,
@@ -29,12 +25,12 @@ function initialiseSchema(db: Database.Database) {
       status TEXT NOT NULL DEFAULT 'submitted',
       priority TEXT DEFAULT NULL,
       pm_notes TEXT DEFAULT NULL,
-      created_at TEXT NOT NULL DEFAULT (datetime('now')),
-      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
 
     CREATE TABLE IF NOT EXISTS key_results (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
       row_number INTEGER NOT NULL,
       key_result TEXT,
@@ -44,21 +40,21 @@ function initialiseSchema(db: Database.Database) {
     );
 
     CREATE TABLE IF NOT EXISTS feature_requests (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       title TEXT NOT NULL,
-      description TEXT NOT NULL,
+      description TEXT,
       requester_name TEXT NOT NULL,
       submission_date TEXT NOT NULL,
       estimated_size TEXT NOT NULL DEFAULT 'medium',
       status TEXT NOT NULL DEFAULT 'submitted',
       priority TEXT DEFAULT NULL,
       pm_notes TEXT DEFAULT NULL,
-      created_at TEXT NOT NULL DEFAULT (datetime('now')),
-      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
 
     CREATE TABLE IF NOT EXISTS production_support (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       title TEXT NOT NULL,
       description TEXT NOT NULL,
       submitter_name TEXT NOT NULL,
@@ -68,12 +64,12 @@ function initialiseSchema(db: Database.Database) {
       status TEXT NOT NULL DEFAULT 'submitted',
       priority TEXT DEFAULT NULL,
       pm_notes TEXT DEFAULT NULL,
-      created_at TEXT NOT NULL DEFAULT (datetime('now')),
-      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
 
     CREATE TABLE IF NOT EXISTS bau_items (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       title TEXT NOT NULL,
       description TEXT,
       category TEXT,
@@ -81,8 +77,14 @@ function initialiseSchema(db: Database.Database) {
       submission_date TEXT NOT NULL,
       status TEXT NOT NULL DEFAULT 'submitted',
       pm_notes TEXT DEFAULT NULL,
-      created_at TEXT NOT NULL DEFAULT (datetime('now')),
-      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
   `);
+}
+
+export async function db(): Promise<Pool> {
+  const p = getPool();
+  await schemaReady;
+  return p;
 }
