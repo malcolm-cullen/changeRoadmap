@@ -1,16 +1,21 @@
 @import "tailwindcss";
 
+@theme {
+  /* HomeChoice Brand Plum - do not alter */
+  --color-plum: #7A1E5C;
+  --color-plum-dark: #621750;
+  --color-plum-light: #F5EDF2;
+  --color-plum-border: #E8D5E4;
+}
+
 :root {
   --background: #ffffff;
-  --foreground: #171717;
-  /* Corporate brand colours - update these to match your organisation */
-  --brand-primary: #1d4ed8;   /* blue-700 - main brand colour */
-  --brand-secondary: #1e3a5f; /* dark navy - header/accent */
-  --brand-accent: #f0f4ff;    /* light blue tint - backgrounds */
+  --foreground: #000000;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  /* HomeChoice CI: Arial is the approved corporate typeface */
+  font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
 }
