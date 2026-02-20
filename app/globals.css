@@ -1,0 +1,16 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+  /* Corporate brand colours - update these to match your organisation */
+  --brand-primary: #1d4ed8;   /* blue-700 - main brand colour */
+  --brand-secondary: #1e3a5f; /* dark navy - header/accent */
+  --brand-accent: #f0f4ff;    /* light blue tint - backgrounds */
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
